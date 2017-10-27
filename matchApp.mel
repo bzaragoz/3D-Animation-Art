@@ -1,0 +1,390 @@
+// Match left FK arm to result arm
+proc leftArm_FKtoResult(){
+    float $default_upperarm_length = 4.8;
+    float $default_forearm_length = 4.8;
+    
+    float $curr_upperarm_length = `getAttr leftForeArm_result_JNT.translateX`;
+    float $curr_forearm_length = `getAttr leftHand_result_JNT.translateX`;
+    
+    float $upperarm_length_factor = $curr_upperarm_length / $default_upperarm_length;
+    float $forearm_length_factor = $curr_forearm_length / $default_forearm_length;
+
+    $r_upperArm = `xform -query -worldSpace -rotation leftUpperArm_FK_snap_JNT`;
+    $r_foreArm = `xform -query -worldSpace -rotation leftForeArm_FK_snap_JNT`;
+    $r_hand = `xform -query -worldSpace -rotation leftHand_FK_snap_JNT`;
+    
+    setAttr leftUpperArm_FK_CTRL.length $upperarm_length_factor;
+    setAttr leftForeArm_FK_CTRL.length $forearm_length_factor;
+    
+    setAttr leftArm_gimbalCorr_CTRL.rotate 0 0 0;
+    xform -worldSpace -rotation $r_upperArm[0] $r_upperArm[1] $r_upperArm[2] leftUpperArm_FK_CTRL;
+    xform -worldSpace -rotation $r_foreArm[0] $r_foreArm[1] $r_foreArm[2] leftForeArm_FK_CTRL;
+    xform -worldSpace -rotation $r_hand[0] $r_hand[1] $r_hand[2] leftHand_FK_CTRL;
+    
+    setAttr leftArm_settings_CTRL.FK_IK_blend 0;
+}
+
+// Match right FK arm to result arm
+proc rightArm_FKtoResult(){
+    float $default_upperarm_length = -4.8;
+    float $default_forearm_length = -4.8;
+    
+    float $curr_upperarm_length = `getAttr rightForeArm_result_JNT.translateX`;
+    float $curr_forearm_length = `getAttr rightHand_result_JNT.translateX`;
+    
+    float $upperarm_length_factor = $curr_upperarm_length / $default_upperarm_length;
+    float $forearm_length_factor = $curr_forearm_length / $default_forearm_length;
+    
+    $r_upperArm = `xform -query -worldSpace -rotation rightUpperArm_FK_snap_JNT`;
+    $r_foreArm = `xform -query -worldSpace -rotation rightForeArm_FK_snap_JNT`;
+    $r_hand = `xform -query -worldSpace -rotation rightHand_FK_snap_JNT`;
+    
+    setAttr rightUpperArm_FK_CTRL.length $upperarm_length_factor;
+    setAttr rightForeArm_FK_CTRL.length $forearm_length_factor;
+    
+    setAttr rightArm_gimbalCorr_CTRL.rotate 0 0 0;
+    xform -worldSpace -rotation $r_upperArm[0] $r_upperArm[1] $r_upperArm[2] rightUpperArm_FK_CTRL;
+    xform -worldSpace -rotation $r_foreArm[0] $r_foreArm[1] $r_foreArm[2] rightForeArm_FK_CTRL;
+    xform -worldSpace -rotation $r_hand[0] $r_hand[1] $r_hand[2] rightHand_FK_CTRL;
+    
+    setAttr rightArm_settings_CTRL.FK_IK_blend 0;
+}
+
+// Match left IK arm to result arm
+proc leftArm_IKtoResult(int $forearm_mode){
+    float $default_upperarm_length = 4.8;
+    float $default_forearm_length = 4.8;
+    
+    float $curr_upperarm_length = `getAttr leftForeArm_result_JNT.translateX`;
+    float $curr_forearm_length = `getAttr leftHand_result_JNT.translateX`;
+    
+    float $tolerance = 0.001;
+    if ($forearm_mode == 1){
+        if ((abs($curr_upperarm_length - $default_upperarm_length) > $tolerance) ||
+            (abs($curr_forearm_length - $default_forearm_length) > $tolerance)){
+            setAttr leftElbow_CTRL.elbowSnap 1;
+        }
+        
+        $r_hand = `xform -query -worldSpace -rotation leftArm_IK_snap_GRP`;
+        $t_hand = `xform -query -worldSpace -translation leftArm_IK_snap_GRP`;
+        $t_elbow = `xform -query -worldSpace -translation leftForeArm_result_JNT`;
+        
+        setAttr leftElbow_CTRL.FK_forearmBlend 0;
+        
+        xform -worldSpace -rotation $r_hand[0] $r_hand[1] $r_hand[2] leftArm_CTRL;
+        xform -worldSpace -translation $t_hand[0] $t_hand[1] $t_hand[2] leftArm_CTRL;
+        xform -worldSpace -translation $t_elbow[0] $t_elbow[1] $t_elbow[2] leftElbow_CTRL;
+    } else {
+        $t_elbow = `xform -query -worldSpace -translation leftForeArm_result_JNT`;
+        $r_foreArm = `xform -query -worldSpace -rotation leftForeArm_FK_snap_JNT`;
+        $r_hand = `xform -query -worldSpace -rotation leftHand_FK_snap_JNT`;
+        
+        float $forearm_length_factor = $curr_forearm_length / $default_forearm_length;
+        
+        setAttr leftElbow_CTRL.elbowSnap 1;
+        setAttr leftElbow_CTRL.FK_forearmBlend 1;
+        
+        setAttr leftElbowForeArm_FK_CTRL.length $forearm_length_factor;
+        xform -worldSpace -translation $t_elbow[0] $t_elbow[1] $t_elbow[2] leftElbow_CTRL;
+        xform -worldSpace -rotation $r_foreArm[0] $r_foreArm[1] $r_foreArm[2] leftElbowForeArm_FK_CTRL;
+        xform -worldSpace -rotation $r_hand[0] $r_hand[1] $r_hand[2] leftElbowHand_FK_CTRL;
+    }
+    setAttr leftArm_settings_CTRL.FK_IK_blend 1;
+}
+
+// Match right IK arm to result arm
+proc rightArm_IKtoResult(int $forearm_mode){
+    float $default_upperarm_length = -4.8;
+    float $default_forearm_length = -4.8;
+    
+    float $curr_upperarm_length = `getAttr rightForeArm_result_JNT.translateX`;
+    float $curr_forearm_length = `getAttr rightHand_result_JNT.translateX`;
+
+    float $tolerance = 0.001;
+    if ($forearm_mode == 1){
+        if ((abs($curr_upperarm_length - $default_upperarm_length) > $tolerance) ||
+            (abs($curr_forearm_length - $default_forearm_length) > $tolerance)){
+            setAttr rightElbow_CTRL.elbowSnap 1;
+        }
+        
+        $r_hand = `xform -query -worldSpace -rotation rightArm_IK_snap_GRP`;
+        $t_hand = `xform -query -worldSpace -translation rightArm_IK_snap_GRP`;
+        $t_elbow = `xform -query -worldSpace -translation rightForeArm_result_JNT`;
+        
+        setAttr rightElbow_CTRL.FK_forearmBlend 0;
+        
+        xform -worldSpace -rotation $r_hand[0] $r_hand[1] $r_hand[2] rightArm_CTRL;
+        xform -worldSpace -translation $t_hand[0] $t_hand[1] $t_hand[2] rightArm_CTRL;
+        xform -worldSpace -translation $t_elbow[0] $t_elbow[1] $t_elbow[2] rightElbow_CTRL;
+    } else {
+        $t_elbow = `xform -query -worldSpace -translation rightForeArm_result_JNT`;
+        $r_foreArm = `xform -query -worldSpace -rotation rightForeArm_FK_snap_JNT`;
+        $r_hand = `xform -query -worldSpace -rotation rightHand_FK_snap_JNT`;
+        
+        float $forearm_length_factor = $curr_forearm_length / $default_forearm_length;
+        
+        setAttr rightElbow_CTRL.elbowSnap 1;
+        setAttr rightElbow_CTRL.FK_forearmBlend 1;
+        
+        setAttr rightElbowForeArm_FK_CTRL.length $forearm_length_factor;
+        xform -worldSpace -translation $t_elbow[0] $t_elbow[1] $t_elbow[2] rightElbow_CTRL;
+        xform -worldSpace -rotation $r_foreArm[0] $r_foreArm[1] $r_foreArm[2] rightElbowForeArm_FK_CTRL;
+        xform -worldSpace -rotation $r_hand[0] $r_hand[1] $r_hand[2] rightElbowHand_FK_CTRL;
+    }
+    setAttr rightArm_settings_CTRL.FK_IK_blend 1;
+}
+
+// Match left FK leg to result leg
+proc leftLeg_FKtoResult(){
+    float $default_thigh_length = 6.75;
+    float $default_shin_length = 6.75;
+    
+    float $curr_thigh_length = `getAttr leftShin_result_JNT.translateX`;
+    float $curr_shin_length = `getAttr leftFoot_result_JNT.translateX`;
+    
+    float $thigh_length_factor = $curr_thigh_length / $default_thigh_length;
+    float $shin_length_factor = $curr_shin_length / $default_shin_length;
+
+    $r_thigh = `xform -query -worldSpace -rotation leftThigh_FK_snap_JNT`;
+    $r_shin = `xform -query -worldSpace -rotation leftShin_FK_snap_JNT`;
+    $r_foot = `xform -query -worldSpace -rotation leftFoot_FK_snap_JNT`;
+    $r_ball = `xform -query -worldSpace -rotation leftBall_FK_snap_JNT`;
+    
+    setAttr leftThigh_FK_CTRL.length $thigh_length_factor;
+    setAttr leftShin_FK_CTRL.length $shin_length_factor;
+    
+    xform -worldSpace -rotation $r_thigh[0] $r_thigh[1] $r_thigh[2] leftThigh_FK_CTRL;
+    xform -worldSpace -rotation $r_shin[0] $r_shin[1] $r_shin[2] leftShin_FK_CTRL;
+    xform -worldSpace -rotation $r_foot[0] $r_foot[1] $r_foot[2] leftFoot_FK_CTRL;
+    xform -worldSpace -rotation $r_ball[0] $r_ball[1] $r_ball[2] leftBall_FK_CTRL;
+    
+    setAttr leftLeg_settings_CTRL.FK_IK_blend 0;
+}
+
+// Match right FK leg to result leg
+proc rightLeg_FKtoResult(){
+    float $default_thigh_length = -6.75;
+    float $default_shin_length = -6.75;
+    
+    float $curr_thigh_length = `getAttr rightShin_result_JNT.translateX`;
+    float $curr_shin_length = `getAttr rightFoot_result_JNT.translateX`;
+    
+    float $thigh_length_factor = $curr_thigh_length / $default_thigh_length;
+    float $shin_length_factor = $curr_shin_length / $default_shin_length;
+
+    $r_thigh = `xform -query -worldSpace -rotation rightThigh_FK_snap_JNT`;
+    $r_shin = `xform -query -worldSpace -rotation rightShin_FK_snap_JNT`;
+    $r_foot = `xform -query -worldSpace -rotation rightFoot_FK_snap_JNT`;
+    $r_ball = `xform -query -worldSpace -rotation rightBall_FK_snap_JNT`;
+    
+    setAttr rightThigh_FK_CTRL.length $thigh_length_factor;
+    setAttr rightShin_FK_CTRL.length $shin_length_factor;
+    
+    xform -worldSpace -rotation $r_thigh[0] $r_thigh[1] $r_thigh[2] rightThigh_FK_CTRL;
+    xform -worldSpace -rotation $r_shin[0] $r_shin[1] $r_shin[2] rightShin_FK_CTRL;
+    xform -worldSpace -rotation $r_foot[0] $r_foot[1] $r_foot[2] rightFoot_FK_CTRL;
+    xform -worldSpace -rotation $r_ball[0] $r_ball[1] $r_ball[2] rightBall_FK_CTRL;
+    
+    setAttr rightLeg_settings_CTRL.FK_IK_blend 0;
+}
+
+// Match left IK leg to result leg
+proc leftLeg_IKtoResult(int $knee_mode){
+    float $default_thigh_length = 6.75;
+    float $default_shin_length = 6.75;
+    
+    float $curr_thigh_length = `getAttr leftShin_result_JNT.translateX`;
+    float $curr_shin_length = `getAttr leftFoot_result_JNT.translateX`;
+    
+    float $tolerance = 0.001;
+    if ((abs($curr_thigh_length - $default_thigh_length) > $tolerance) ||
+        (abs($curr_shin_length - $default_shin_length) > $tolerance)){
+        setAttr leftKnee_CTRL.kneeSnap 1;
+    }
+    
+    $r_foot = `xform -query -worldSpace -rotation leftFoot_IK_snap_GRP`;  
+    $t_foot_wrp = `xform -query -worldSpace -rp leftFoot_IK_snap_GRP`;
+    $t_foot_drp = `xform -query -worldSpace -rp leftFoot_IK_default_GRP`;
+
+    $curr_transform = `getAttr BaseMaleCharacter_root_CTRL.translate`;
+    $curr_foot_orient = `getAttr leftBall_result_JNT.rotateY`;
+          
+    xform -worldSpace -rotation $r_foot[0] $r_foot[1] $r_foot[2] leftFoot_CTRL;
+    xform -worldSpace -translation ($t_foot_wrp[0]-$t_foot_drp[0]+$curr_transform[0]) ($t_foot_wrp[1]-$t_foot_drp[1]+$curr_transform[1]) ($t_foot_wrp[2]-$t_foot_drp[2]+$curr_transform[2]) leftFoot_CTRL;
+
+    setAttr leftFoot_CTRL.toeWiggle $curr_foot_orient; 
+    
+    if ($knee_mode == 2){
+        $t_knee_wrp = `xform -query -worldSpace -rp leftShin_result_JNT`;
+        $t_knee_drp = `xform -query -worldSpace -rp leftKnee_IK_default_GRP`;
+        
+        xform -worldSpace -translation ($t_knee_wrp[0]-$t_knee_drp[0]+$curr_transform[0]) ($t_knee_wrp[1]-$t_knee_drp[1]+$curr_transform[1]) ($t_knee_wrp[2]-$t_knee_drp[2]+$curr_transform[2]) leftKnee_CTRL;
+        
+        setAttr leftLeg_settings_CTRL.autoManualKneeBlend 1;
+    } else {
+        float $leg_length_factor = `getAttr leftShin_IK_JNT_translateX1.output` / $default_thigh_length;
+        float $thigh_length_factor = $curr_thigh_length / ($default_thigh_length * $leg_length_factor);
+        float $shin_length_factor = $curr_shin_length / ($default_shin_length * $leg_length_factor);
+        
+        setAttr leftFoot_CTRL.autoKneeThighLength ($thigh_length_factor);
+        setAttr leftFoot_CTRL.autoKneeShinLength ($shin_length_factor);
+        
+        setAttr leftFoot_CTRL.kneeTwist 0;
+        
+        float $noFlip_shin_pos[] = `xform -query -worldSpace -translation leftShin_noFlip_IK_JNT`;
+        float $result_shin_pos[] = `xform -query -worldSpace -translation leftShin_result_JNT`;
+        float $center_shin_pos[] = `xform -query -worldSpace -translation leftFoot_noFlip_IK_JNT`;
+        
+        float $centerToNoFlip[] = {$noFlip_shin_pos[0]-$center_shin_pos[0], $noFlip_shin_pos[1]-$center_shin_pos[1], $noFlip_shin_pos[2]-$center_shin_pos[2]};
+        float $centerToResult[] = {$result_shin_pos[0]-$center_shin_pos[0], $result_shin_pos[1]-$center_shin_pos[1], $result_shin_pos[2]-$center_shin_pos[2]};
+        float $deltaAngle[] = `angleBetween -v1 $centerToNoFlip[0] $centerToNoFlip[1] $centerToNoFlip[2] -v2 $centerToResult[0] $centerToResult[1] $centerToResult[2]`;
+        
+        float $kneeTwist = iterateToMatch("leftShin_noFlip_IK_JNT", $center_shin_pos, "leftFoot_CTRL.kneeTwist", $centerToNoFlip, $deltaAngle[3], 90, 0);
+        float $curr_shin_pos[] = `xform -query -worldSpace -translation leftShin_noFlip_IK_JNT`;
+        
+        float $tolerance = 0.1;
+        if((abs($curr_shin_pos[0]-$result_shin_pos[0]) > $tolerance) || (abs($curr_shin_pos[1]-$result_shin_pos[1]) > $tolerance) || (abs($curr_shin_pos[2]-$result_shin_pos[2]) > $tolerance)){
+            setAttr leftFoot_CTRL.kneeTwist (-1*$kneeTwist);
+        }
+        
+        setAttr leftLeg_settings_CTRL.autoManualKneeBlend 0;
+    }
+    
+    setAttr leftLeg_settings_CTRL.FK_IK_blend 1;
+}
+
+// Match right IK leg to result leg
+proc rightLeg_IKtoResult(int $knee_mode){
+    float $default_thigh_length = -6.75;
+    float $default_shin_length = -6.75;
+    
+    float $curr_thigh_length = `getAttr rightShin_result_JNT.translateX`;
+    float $curr_shin_length = `getAttr rightFoot_result_JNT.translateX`;
+    
+    float $tolerance = 0.001;
+    if ((abs($curr_thigh_length - $default_thigh_length) > $tolerance) ||
+        (abs($curr_shin_length - $default_shin_length) > $tolerance)){
+        setAttr rightKnee_CTRL.kneeSnap 1;
+    }
+    
+    $r_foot = `xform -query -worldSpace -rotation rightFoot_IK_snap_GRP`;  
+    $t_foot_wrp = `xform -query -worldSpace -rp rightFoot_IK_snap_GRP`;
+    $t_foot_drp = `xform -query -worldSpace -rp rightFoot_IK_default_GRP`;
+
+    
+    $curr_transform = `getAttr BaseMaleCharacter_root_CTRL.translate`;
+    $curr_foot_orient = `getAttr rightBall_result_JNT.rotateY`;
+          
+    xform -worldSpace -rotation $r_foot[0] $r_foot[1] $r_foot[2] rightFoot_CTRL;
+    xform -worldSpace -translation ($t_foot_wrp[0]-$t_foot_drp[0]+$curr_transform[0]) ($t_foot_wrp[1]-$t_foot_drp[1]+$curr_transform[1]) ($t_foot_wrp[2]-$t_foot_drp[2]+$curr_transform[2]) rightFoot_CTRL;
+
+    setAttr rightFoot_CTRL.toeWiggle $curr_foot_orient;
+    
+    if ($knee_mode == 2){
+        $t_knee_wrp = `xform -query -worldSpace -rp rightShin_result_JNT`;
+        $t_knee_drp = `xform -query -worldSpace -rp rightKnee_IK_default_GRP`;
+        
+        xform -worldSpace -translation ($t_knee_wrp[0]-$t_knee_drp[0]+$curr_transform[0]) ($t_knee_wrp[1]-$t_knee_drp[1]+$curr_transform[1]) ($t_knee_wrp[2]-$t_knee_drp[2]+$curr_transform[2]) rightKnee_CTRL;
+        
+        setAttr rightLeg_settings_CTRL.autoManualKneeBlend 1;
+    } else {
+        float $leg_length_factor = `getAttr rightShin_IK_JNT_translateX1.output` / $default_thigh_length;
+        float $thigh_length_factor = $curr_thigh_length / ($default_thigh_length * $leg_length_factor);
+        float $shin_length_factor = $curr_shin_length / ($default_shin_length * $leg_length_factor);
+        
+        setAttr rightFoot_CTRL.autoKneeThighLength ($thigh_length_factor);
+        setAttr rightFoot_CTRL.autoKneeShinLength ($shin_length_factor);
+        
+        setAttr rightFoot_CTRL.kneeTwist 0;
+        
+        float $noFlip_shin_pos[] = `xform -query -worldSpace -translation rightShin_noFlip_IK_JNT`;
+        float $result_shin_pos[] = `xform -query -worldSpace -translation rightShin_result_JNT`;
+        float $center_shin_pos[] = `xform -query -worldSpace -translation rightFoot_noFlip_IK_JNT`;
+        
+        float $centerToNoFlip[] = {$noFlip_shin_pos[0]-$center_shin_pos[0], $noFlip_shin_pos[1]-$center_shin_pos[1], $noFlip_shin_pos[2]-$center_shin_pos[2]};
+        float $centerToResult[] = {$result_shin_pos[0]-$center_shin_pos[0], $result_shin_pos[1]-$center_shin_pos[1], $result_shin_pos[2]-$center_shin_pos[2]};
+        float $deltaAngle[] = `angleBetween -v1 $centerToNoFlip[0] $centerToNoFlip[1] $centerToNoFlip[2] -v2 $centerToResult[0] $centerToResult[1] $centerToResult[2]`;
+        
+        float $kneeTwist = iterateToMatch("rightShin_noFlip_IK_JNT", $center_shin_pos, "rightFoot_CTRL.kneeTwist", $centerToNoFlip, $deltaAngle[3], 90, 0);
+        float $curr_shin_pos[] = `xform -query -worldSpace -translation rightShin_noFlip_IK_JNT`;
+        
+        float $tolerance = 0.1;
+        if((abs($curr_shin_pos[0]-$result_shin_pos[0]) > $tolerance) || (abs($curr_shin_pos[1]-$result_shin_pos[1]) > $tolerance) || (abs($curr_shin_pos[2]-$result_shin_pos[2]) > $tolerance)){
+            setAttr rightFoot_CTRL.kneeTwist (-1*$kneeTwist);
+        }
+        
+        setAttr rightLeg_settings_CTRL.autoManualKneeBlend 0;
+    }
+    
+    setAttr rightLeg_settings_CTRL.FK_IK_blend 1;
+}
+
+// Match automatic IK knee twist to result knee
+proc float iterateToMatch(string $sourceNode, float $center_pos[], string $driveAttr, float $zeroVector[], float $targetAngle, float $value, int $count){
+    setAttr $driveAttr $value;
+    
+    float $curr_pos[] = `xform -query -worldSpace -translation $sourceNode`;
+    float $centerToCurr[] = {$curr_pos[0]-$center_pos[0], $curr_pos[1]-$center_pos[1], $curr_pos[2]-$center_pos[2]};
+    float $currAngle[] = `angleBetween -v1 $centerToCurr[0] $centerToCurr[1] $centerToCurr[2] -v2 $zeroVector[0] $zeroVector[1] $zeroVector[2]`;
+    
+    float $tolerance = 0.01;
+    if(abs($currAngle[3]-$targetAngle) < $tolerance || $count > 10000){
+        if($count > 10000){
+            print("Match failed.  Over 10000 iterations.\n");
+        }
+        
+        return $value;
+    } else {
+        if($currAngle[3]>$targetAngle){
+            $value = $value - $value/2;
+        } else{
+            $value = $value + $value/2;
+        }
+        
+        return iterateToMatch($sourceNode, $center_pos, $driveAttr, $zeroVector, $targetAngle, $value, $count+1); 
+    }    
+}
+
+if (`window -ex matchApp`)
+    deleteUI matchApp;
+    
+window matchApp;
+
+frameLayout -l "FK/IK Matching"
+    columnLayout;
+        text -align center -l "Go to matching...";
+        separator -horizontal true;
+            rowColumnLayout -numberOfColumns 2;
+
+                // Match FK arm to result arm
+                button -l "Left FK Arm" -c "leftArm_FKtoResult()";
+                button -l "Right FK Arm" -c "rightArm_FKtoResult()";
+                
+                // Match IK arm to result arm
+                rowLayout -numberOfColumns 2;
+                    button -l "Left IK Arm" -c "leftArm_IKtoResult(`radioButtonGrp -q -select leftForeArmMode`)";
+                    radioButtonGrp -vertical -numberOfRadioButtons 2 -labelArray2 "IK forearm" "FK forearm" -select 1 leftForeArmMode;
+                setParent..;
+                
+                rowLayout -numberOfColumns 2;    
+                    button -l "Right IK Arm" -c "rightArm_IKtoResult(`radioButtonGrp -q -select rightForeArmMode`)";
+                    radioButtonGrp -vertical -numberOfRadioButtons 2 -labelArray2 "IK forearm" "FK forearm" -select 1 rightForeArmMode;    
+                setParent..;
+
+                // Match FK leg to result leg
+                button -l "Left FK leg" -c "leftLeg_FKtoResult()";
+                button -l "Right FK leg" -c "rightLeg_FKtoResult()";
+                
+                // Match IK leg to result leg
+                rowLayout -numberOfColumns 2;
+                    button -l "Left IK Leg" -c "leftLeg_IKtoResult(`radioButtonGrp -q -select leftKneeMode`)";
+                    radioButtonGrp -vertical -numberOfRadioButtons 2 -labelArray2 "Auto knee" "Manual knee" -select 1 leftKneeMode;
+                setParent..;
+                
+                rowLayout -numberOfColumns 2;    
+                    button -l "Right IK Leg" -c "rightLeg_IKtoResult(`radioButtonGrp -q -select rightKneeMode`)";
+                    radioButtonGrp -vertical -numberOfRadioButtons 2 -labelArray2 "Auto knee" "Manual knee" -select 1 rightKneeMode;    
+                setParent..;
+                
+// Display matchApp window
+showWindow matchApp;
